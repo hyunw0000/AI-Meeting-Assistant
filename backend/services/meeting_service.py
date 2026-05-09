@@ -1,21 +1,50 @@
+import re
+
+
 def generate_meeting_result(transcript):
+    tasks = extract_tasks(transcript)
+
     return {
-        "title": "회의록 테스트",
-        "summary": "오늘 회의에서는 프로젝트 기능 구현 방향을 논의했습니다.",
-        "decisions": [
-            "음성 파일 업로드 기능을 구현하기로 했습니다.",
-            "회의록은 캘린더 날짜별로 조회할 수 있도록 하기로 했습니다."
-        ],
-        "tasks": [
-            {
-                "content": "음성 업로드 API 구현",
-                "assignee": "백엔드 담당자",
-                "due_date": "2026-05-10"
-            },
-            {
-                "content": "캘린더 UI 구현",
-                "assignee": "프론트엔드 담당자",
-                "due_date": "2026-05-11"
-            }
-        ]
+        "title": "회의록",
+        "summary": generate_summary(transcript),
+        "decisions": generate_decisions(transcript),
+        "tasks": tasks
     }
+
+
+def generate_summary(transcript):
+    if not transcript:
+        return "음성 인식 결과가 없습니다."
+
+    if len(transcript) > 120:
+        return transcript[:120] + "..."
+
+    return transcript
+
+
+def generate_decisions(transcript):
+    if not transcript:
+        return []
+
+    return [
+        "회의 내용을 바탕으로 후속 작업을 정리했습니다."
+    ]
+
+
+def extract_tasks(transcript):
+    tasks = []
+
+    if not transcript:
+        return tasks
+
+    # YYYY-MM-DD 형식 날짜 추출
+    date_patterns = re.findall(r"\d{4}-\d{2}-\d{2}", transcript)
+
+    for date in date_patterns:
+        tasks.append({
+            "content": "회의에서 언급된 일정",
+            "assignee": "미정",
+            "due_date": date
+        })
+
+    return tasks

@@ -58,5 +58,53 @@
       ]
     },
     "created_at": "2026-05-09T17:27:11.726630"
+  },
+  {
+    "id": "20260509_174214",
+    "source": "upload",
+    "original_filename": "voice.mp3",
+    "saved_filename": "20260509_174214_voice.mp3",
+    "file_path": "uploads\\20260509_174214_voice.mp3",
+    "meeting_date": "2025-05-09",
+    "transcript": "안녕하세요. 가천대학교 소프트웨어 전공 입니다. 항상 성실하게 공부하는 학생입니다.",
+    "meeting_result": {
+      "title": "회의록 테스트",
+      "summary": "오늘 회의에서는 프로젝트 기능 구현 방향을 논의했습니다.",
+      "decisions": [
+        "음성 파일 업로드 기능을 구현하기로 했습니다.",
+        "회의록은 캘린더 날짜별로 조회할 수 있도록 하기로 했습니다."
+      ],
+      "tasks": [
+        {
+          "content": "음성 업로드 API 구현",
+          "assignee": "백엔드 담당자",
+          "due_date": "2026-05-10"
+        },
+        {
+          "content": "캘린더 UI 구현",
+          "assignee": "프론트엔드 담당자",
+          "due_date": "2026-05-11"
+        }
+      ]
+    },
+    "created_at": "2026-05-09T17:42:16.504913"
+  },
+  {
+    "id": "20260509_174725",
+    "source": "upload",
+    "original_filename": "voice.mp3",
+    "saved_filename": "20260509_174725_voice.mp3",
+    "file_path": "uploads\\20260509_174725_voice.mp3",
+    "meeting_date": "2025-05-09",
+    "transcript": "안녕하세요. 가천대학교 소프트웨어 전공 입니다. 항상 성실하게 공부하는 학생입니다.",
+    "meeting_result": {
+      "title": "회의록",
+      "summary": "안녕하세요. 가천대학교 소프트웨어 전공 입니다. 항상 성실하게 공부하는 학생입니다.",
+      "decisions": [
+        "회의 내용을 바탕으로 후속 작업을 정리했습니다."
+      ],
+      "tasks": []
+    },
+    "created_at": "2026-05-09T17:47:27.632575"
   }
 ]
