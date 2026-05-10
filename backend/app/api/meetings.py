@@ -1,26 +1,23 @@
-from fastapi import FastAPI, UploadFile, File, Form, Query
+from fastapi import APIRouter, UploadFile, File, Form, Query
 import os
 import shutil
 from datetime import datetime
 
-from services.stt_service import speech_to_text
-from services.meeting_service import generate_meeting_result
-from services.storage_service import save_meeting, get_meetings_by_date, get_calendar_events
+from app.services.stt_service import speech_to_text
+from app.services.meeting_service import generate_meeting_result
+from app.services.storage_service import (
+    save_meeting,
+    get_meetings_by_date,
+    get_calendar_events
+)
 
-from database import engine
-from models import Base
-
-app = FastAPI()
-Base.metadata.create_all(bind=engine)
+router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-@app.get("/")
-def root():
-    return {"message": "AI Meeting Assistant Backend"}
 
-@app.post("/api/meetings/audio")
+@router.post("/audio")
 async def upload_audio(
     file: UploadFile = File(...),
     source: str = Form("upload"),
@@ -58,7 +55,8 @@ async def upload_audio(
         "meeting": meeting
     }
 
-@app.get("/api/meetings/date")
+
+@router.get("/date")
 def get_meetings_by_meeting_date(date: str = Query(...)):
     meetings = get_meetings_by_date(date)
 
@@ -68,7 +66,8 @@ def get_meetings_by_meeting_date(date: str = Query(...)):
         "meetings": meetings
     }
 
-@app.get("/api/calendar/events")
+
+@router.get("/calendar/events")
 def get_events():
     events = get_calendar_events()
 
