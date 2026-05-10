@@ -36,7 +36,6 @@ export default function CalendarPage() {
   const [newColor, setNewColor] = useState('#039be5')
   const [listModalDate, setListModalDate] = useState<Date | null>(null)
 
-  // ✅ useEffect 위치 수정
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
@@ -137,8 +136,15 @@ export default function CalendarPage() {
     return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
   }
 
-  const handleGoogleLogin = () => {
-    window.location.href = `http://${window.location.hostname}:8000/api/v1/calendar/auth`
+  // ✅ JSON 받아서 window.location.href로 이동
+  const handleGoogleLogin = async () => {
+    try {
+      const response = await fetch('/api/v1/calendar/auth')
+      const data = await response.json()
+      window.location.href = data.auth_url
+    } catch (e) {
+      console.error('로그인 실패', e)
+    }
   }
 
   const handleLogout = () => {
