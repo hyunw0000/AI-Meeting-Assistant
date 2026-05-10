@@ -120,17 +120,29 @@ export default function CalendarPage() {
     return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
   }
 
+  // 페이지 로드 시 구글 인증 상태 확인
+  import { useEffect } from 'react'
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const res = await fetch(`http://${window.location.hostname}:8000/api/v1/calendar/status`);
+        const data = await res.json();
+        if (data.is_logged_in) {
+          setIsLoggedIn(true);
+          setShowLoginModal(false);
+        }
+      } catch (e) {
+        console.error("인증 상태 확인 실패:", e);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
   const handleGoogleLogin = () => {
-    setIsLoggedIn(true)
-    setShowLoginModal(false)
-    // 백엔드 연결 후 이걸로 교체:
-    // try {
-    //   const res = await fetch('http://localhost:8000/api/v1/calendar/auth')
-    //   const data = await res.json()
-    //   if (data.auth_url) window.location.href = data.auth_url
-    // } catch (e) {
-    //   console.error(e)
-    // }
+    // 백엔드의 /auth 엔드포인트로 직접 이동
+    // 백엔드가 여기서 바로 구글 로그인 페이지로 리다이렉트 시켜줍니다.
+    window.location.href = `http://${window.location.hostname}:8000/api/v1/calendar/auth`;
   }
 
   const handleLogout = () => {
