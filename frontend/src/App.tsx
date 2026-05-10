@@ -1,38 +1,18 @@
-import { useState } from 'react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import { Calendar as CalendarIcon, FileText, Plus, MessageSquare, CheckCircle, Clock } from 'lucide-react';
-import './App.css';
-
-interface Meeting {
-  id: string;
-  title: string;
-  date: Date;
-  summary: string;
-  actionItems: string[];
-  transcript: string;
-}
-
-const mockMeetings: Meeting[] = [
-  {
-    id: '1',
-    title: 'AI Meeting Assistant 기획 회의',
-    date: new Date(2026, 4, 9), // 2026-05-09
-    summary: '프로젝트 초기 아키텍처 및 프론트엔드 개발 우선순위에 대해 논의함. 달력 중심의 UI를 구축하기로 결정.',
-    actionItems: ['React Calendar 라이브러리 설치', 'Mock 데이터 구조 설계', 'NCP API 연동 가이드 확인'],
-    transcript: 'A: 안녕하세요. 오늘 회의 시작합시다. B: 네, 달력 화면부터 만드는거 맞죠? A: 네, 맞습니다.'
-  },
-  {
-    id: '2',
-    title: '디자인 시스템 리뷰',
-    date: new Date(2026, 4, 10), // 2026-05-10
-    summary: '사용자 경험을 개선하기 위한 디자인 시스템 초안 리뷰. 보라색 테마를 유지하기로 함.',
-    actionItems: ['색상 팔레트 확정', '아이콘 팩 선택 (Lucide React)'],
-    transcript: '디자이너: 보라색이 브랜드 아이덴티티에 잘 맞을 것 같아요. 개발자: 좋습니다. 구현하기 편하겠네요.'
-  }
-];
-
+import { Routes, Route } from 'react-router-dom'
+import CalendarPage from './pages/CalendarPage'
+import MeetingDetailPage from './pages/MeetingDetailPage'
+import { MeetingProvider } from './context/MeetingContext'
 function App() {
+<<<<<<< HEAD
+  return (
+    <MeetingProvider>
+      <Routes>
+        <Route path="/" element={<CalendarPage />} />
+        <Route path="/meeting/:id" element={<MeetingDetailPage />} />
+      </Routes>
+    </MeetingProvider>
+  )
+=======
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -200,6 +180,7 @@ function App() {
       )}
     </div>
   );
+>>>>>>> 230683c21909336672600b67904b6aae3029723a
 }
 
-export default App;
+export default App
