@@ -10,7 +10,11 @@ app = FastAPI(title="AI Meeting Assistant")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://101.79.22.220.nip.io",
+        "http://101.79.22.220"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
