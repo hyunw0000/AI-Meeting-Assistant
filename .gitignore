@@ -1,16 +1,24 @@
-# Python
-backend/venv/
-backend/__pycache__/
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Upload files
-backend/uploads/
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
 
-# Environment
-backend/.env
-
-# Node
-frontend/node_modules/
-
-# OS
+# OS files
 .DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Project specific
+ObjectStorage_temp/
+logs/
+*.log
