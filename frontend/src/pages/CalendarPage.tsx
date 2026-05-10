@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useNavigate } from 'react-router-dom'
@@ -121,28 +121,42 @@ export default function CalendarPage() {
   }
 
   // 페이지 로드 시 구글 인증 상태 확인
-  import { useEffect } from 'react'
-
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const res = await fetch(`http://${window.location.hostname}:8000/api/v1/calendar/status`);
+        const host = window.location.hostname || '101.79.22.220';
+        // 정확한 경로: /api/v1 + /calendar/status
+        const res = await fetch(`http://${host}:8000/api/v1/calendar/status`);
+        if (!res.ok) throw new Error('API not found');
         const data = await res.json();
         if (data.is_logged_in) {
           setIsLoggedIn(true);
           setShowLoginModal(false);
         }
       } catch (e) {
-        console.error("인증 상태 확인 실패:", e);
+        console.error("인증 상태 확인 실패 (엔드포인트 경로 확인 요망):", e);
       }
     };
     checkLoginStatus();
   }, []);
 
-  const handleGoogleLogin = () => {
-    // 백엔드의 /auth 엔드포인트로 직접 이동
-    // 백엔드가 여기서 바로 구글 로그인 페이지로 리다이렉트 시켜줍니다.
-    window.location.href = `http://${window.location.hostname}:8000/api/v1/calendar/auth`;
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      // 1. 백엔드에게 "구글 로그인 주소 알려줘"라고 요청 (fetch)
+      const host = window.location.hostname || '101.79.22.220';
+      const res = await fetch(`http://${host}:8000/api/v1/calendar/auth`);
+      const data = await res.json();
+      
+      // 2. 받은 데이터 안에 auth_url 주소가 있으면 실제로 출발!
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        console.error("인증 URL을 받지 못했습니다.");
+      }
+    } catch (err) {
+      console.error("구글 로그인 시도 중 오류 발생:", err);
+    }
   }
 
   const handleLogout = () => {
@@ -156,13 +170,17 @@ export default function CalendarPage() {
 
       {/* 로그인 모달 */}
       {showLoginModal && (
-        <div className="modal-overlay">
-          <div className="login-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="login-modal" onClick={e => e.stopPropagation()} style={{ zIndex: 10000 }}>
             <div className="login-modal-logo">
               <CalendarIcon size={48} color="#aa3bff" />
               <h1 className="login-modal-title">MeetLog</h1>
               <p className="login-modal-desc" style={{ marginTop: 12 }}>AI 회의 기록 서비스, 지금 시작해보세요!</p>            </div>
-            <button className="google-login-btn" onClick={handleGoogleLogin}>
+            <button 
+              className="google-login-btn" 
+              onClick={handleGoogleLogin}
+              style={{ position: 'relative', zIndex: 10001, cursor: 'pointer' }}
+            >
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
                 width={20}
