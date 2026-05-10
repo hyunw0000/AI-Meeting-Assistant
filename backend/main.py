@@ -7,7 +7,11 @@ from services.stt_service import speech_to_text
 from services.meeting_service import generate_meeting_result
 from services.storage_service import save_meeting, get_meetings_by_date, get_calendar_events
 
+from database import engine
+from models import Base
+
 app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
