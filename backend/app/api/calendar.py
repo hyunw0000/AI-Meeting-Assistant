@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import RedirectResponse
 from app.services.google_calendar import google_calendar_service
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+import os
 
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
 
@@ -14,22 +16,24 @@ class EventCreate(BaseModel):
 
 @router.get("/auth")
 async def google_auth():
-    """구글 로그인 URL 반환"""
     auth_url = google_calendar_service.get_auth_url()
     return {"auth_url": auth_url}
 
+@router.get("/status")
+async def auth_status():
+    is_logged_in = os.path.exists("token.json")
+    return {"is_logged_in": is_logged_in}
+
 @router.get("/callback")
 async def google_callback(code: str):
-    """구글 인증 콜백 처리"""
     try:
         google_calendar_service.fetch_token(code)
-        return {"message": "Google Calendar connected successfully"}
+        return RedirectResponse(url="http://101.79.22.220?login=success")  # ✅ 리다이렉트
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        return RedirectResponse(url="http://101.79.22.220?login=error")
 
 @router.post("/create-event")
 async def create_event(event: EventCreate):
-    """일정 생성 엔드포인트"""
     try:
         link = google_calendar_service.create_event(
             event.summary,
