@@ -21,6 +21,7 @@
   margin-left: 20px;
 }
 
+<<<<<<< HEAD
 .logo-text {
   font-size: 20px;
   font-weight: 700;
@@ -67,6 +68,33 @@
 }
 
 .sidebar-section-title {
+=======
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.login-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-h);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.upload-btn {
+>>>>>>> 230683c21909336672600b67904b6aae3029723a
   display: flex;
   align-items: center;
   gap: 8px;
