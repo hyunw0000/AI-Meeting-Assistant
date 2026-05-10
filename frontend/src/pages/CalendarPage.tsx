@@ -36,6 +36,22 @@ export default function CalendarPage() {
   const [newColor, setNewColor] = useState('#039be5')
   const [listModalDate, setListModalDate] = useState<Date | null>(null)
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const res = await fetch(`http://${window.location.hostname}:8000/api/v1/calendar/status`)
+        const data = await res.json()
+        if (data.is_logged_in) {
+          setIsLoggedIn(true)
+          setShowLoginModal(false)
+        }
+      } catch (e) {
+        console.error('인증 상태 확인 실패:', e)
+      }
+    }
+    checkLoginStatus()
+  }, [])
+
   const meetingsOnDate = (date: Date) =>
     meetings.filter(m => m.date.toDateString() === date.toDateString())
 
@@ -168,7 +184,6 @@ export default function CalendarPage() {
   return (
     <div className="dashboard" onClick={() => { setCreatePopup(null); setShowProfileMenu(false) }}>
 
-      {/* 로그인 모달 */}
       {showLoginModal && (
         <div className="modal-overlay" style={{ zIndex: 9999 }}>
           <div className="login-modal" onClick={e => e.stopPropagation()} style={{ zIndex: 10000 }}>
@@ -193,7 +208,6 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* 인라인 헤더 */}
       <div className="inline-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 1, marginLeft: 50 }}>
           <CalendarIcon size={22} color="#aa3bff" />
@@ -215,10 +229,7 @@ export default function CalendarPage() {
                   <span className="profile-dropdown-email">ieunjuee@gmail.com</span>
                 </div>
                 <hr className="profile-dropdown-divider" />
-                <button
-                  className="profile-dropdown-logout"
-                  onClick={handleLogout}
-                >
+                <button className="profile-dropdown-logout" onClick={handleLogout}>
                   로그아웃
                 </button>
               </div>
@@ -227,13 +238,8 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* 메인 레이아웃 */}
       <main className="page-layout">
-
-        {/* 왼쪽 사이드바 */}
         <aside className="sidebar">
-
-          {/* 미니 캘린더 */}
           <div className="sidebar-card">
             <Calendar
               value={miniDate}
@@ -253,7 +259,6 @@ export default function CalendarPage() {
             />
           </div>
 
-          {/* 선택한 날짜 회의 */}
           {selectedSideDate && (
             <div className="sidebar-card">
               <div className="sidebar-section-title">
@@ -283,7 +288,6 @@ export default function CalendarPage() {
             </div>
           )}
 
-          {/* 다가오는 회의 */}
           <div className="sidebar-card">
             <div className="sidebar-section-title">
               <Clock size={16} />
@@ -309,10 +313,8 @@ export default function CalendarPage() {
               </ul>
             )}
           </div>
-
         </aside>
 
-        {/* 오른쪽: 메인 캘린더 */}
         <section className="main-calendar-section">
           <div className="calendar-card-large">
             <div className="card-header">
@@ -335,10 +337,8 @@ export default function CalendarPage() {
             />
           </div>
         </section>
-
       </main>
 
-      {/* 빠른 생성 팝업 */}
       {createPopup && (
         <div
           className="create-popup card"
@@ -386,7 +386,6 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* 날짜 리스트 모달 */}
       {listModalDate && (
         <div className="modal-overlay" onClick={() => setListModalDate(null)}>
           <div className="modal-content card list-modal" onClick={e => e.stopPropagation()}>

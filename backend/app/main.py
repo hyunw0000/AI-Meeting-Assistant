@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.database import engine, Base, get_db
 from app.api import calendar, meetings
 
 app = FastAPI(title="AI Meeting Assistant")
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,

@@ -13,7 +13,7 @@ class Settings:
     DB_PORT: str = os.getenv("DB_PORT", "3306")
     DB_NAME: str = os.getenv("DB_NAME", "ai_meeting_db")
     
-    DATABASE_URL: str = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    DATABASE_URL: str = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # Google Calendar Configuration
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
