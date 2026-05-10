@@ -35,6 +35,7 @@ const initialMeetings: Meeting[] = [
 interface MeetingContextType {
   meetings: Meeting[]
   addMeeting: (meeting: Meeting) => void
+  deleteMeeting: (id: string) => void
 }
 
 const MeetingContext = createContext<MeetingContextType | null>(null)
@@ -42,8 +43,9 @@ const MeetingContext = createContext<MeetingContextType | null>(null)
 export function MeetingProvider({ children }: { children: ReactNode }) {
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings)
   const addMeeting = (meeting: Meeting) => setMeetings(prev => [...prev, meeting])
+  const deleteMeeting = (id: string) => setMeetings(prev => prev.filter(m => m.id !== id))
   return (
-    <MeetingContext.Provider value={{ meetings, addMeeting }}>
+    <MeetingContext.Provider value={{ meetings, addMeeting, deleteMeeting }}>
       {children}
     </MeetingContext.Provider>
   )
