@@ -62,14 +62,31 @@ function App() {
     return null;
   };
 
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/calendar/auth');
+      const data = await response.json();
+      if (data.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } catch (error) {
+      console.error('로그인 URL 가져오기 실패:', error);
+    }
+  };
+
   return (
     <div className="dashboard">
       <header className="header">
         <h1>AI Meeting Assistant</h1>
-        <button className="upload-btn" onClick={() => setIsUploadModalOpen(true)}>
-          <Plus size={20} />
-          새 회의 업로드
-        </button>
+        <div className="header-buttons">
+          <button className="login-btn" onClick={handleLogin}>
+            구글로 로그인
+          </button>
+          <button className="upload-btn" onClick={() => setIsUploadModalOpen(true)}>
+            <Plus size={20} />
+            새 회의 업로드
+          </button>
+        </div>
       </header>
 
       <main className="main-content">
