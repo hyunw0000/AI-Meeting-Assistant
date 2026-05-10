@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, FileText, MessageSquare, Upload, Calendar, Mic, Square, Play, PenLine } from 'lucide-react'
+import { ArrowLeft, FileText, MessageSquare, Upload, Calendar, Mic, Square, Play, PenLine, Trash2 } from 'lucide-react'
 import { useMeetings } from '../context/MeetingContext'
 import '../App.css'
 
@@ -9,7 +9,7 @@ type Tab = 'record' | 'memo' | 'summary' | 'script'
 export default function MeetingDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { meetings } = useMeetings()
+  const { meetings, deleteMeeting } = useMeetings()
 
   const meeting = meetings.find(m => m.id === id)
 
@@ -22,6 +22,7 @@ export default function MeetingDetailPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('파일 업로드 중...')
   const [analyzed, setAnalyzed] = useState(false)
   const [memo, setMemo] = useState('')
 
@@ -67,11 +68,25 @@ export default function MeetingDetailPage() {
   const handleAnalyze = () => {
     if (!uploadedFile && !audioURL) return
     setIsAnalyzing(true)
+    setLoadingMessage('파일 업로드 중...')
     setTimeout(() => {
-      setIsAnalyzing(false)
-      setAnalyzed(true)
-      setActiveTab('summary')
-    }, 2500)
+      setLoadingMessage('STT 변환 중...')
+      setTimeout(() => {
+        setLoadingMessage('AI 요약 생성 중...')
+        setTimeout(() => {
+          setIsAnalyzing(false)
+          setAnalyzed(true)
+          setActiveTab('summary')
+        }, 1000)
+      }, 1000)
+    }, 1000)
+  }
+
+  const handleDelete = () => {
+    if (confirm('이 회의를 삭제할까요?')) {
+      deleteMeeting(meeting!.id)
+      navigate('/')
+    }
   }
 
   if (!meeting) {
@@ -97,6 +112,16 @@ export default function MeetingDetailPage() {
   return (
     <div className="dashboard" style={{ paddingTop: 40 }}>
 
+      {/* 로딩 오버레이 */}
+      {isAnalyzing && (
+        <div className="loading-overlay">
+          <div className="loading-box">
+            <div className="loading-spinner" />
+            <p className="loading-text">{loadingMessage}</p>
+          </div>
+        </div>
+      )}
+
       {/* 제목 + 날짜 */}
       <div className="detail-top">
         <button className="back-btn" onClick={() => navigate('/')}>
@@ -112,6 +137,9 @@ export default function MeetingDetailPage() {
             {meeting.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
         </div>
+        <button className="delete-btn" onClick={handleDelete}>
+          <Trash2 size={18} />
+        </button>
       </div>
 
       {/* 탭 */}
@@ -236,7 +264,7 @@ export default function MeetingDetailPage() {
             </div>
             {analyzed ? (
               <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
-                AI가 분석한 회의 요약 내용이 여기에 표시됩니다. 주요 논의 사항과 결론이 자동으로 정리됩니다.
+                AI가 분석한 회의 요약 내용이 여기에 표시됩니다.
               </p>
             ) : meeting.summary ? (
               <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>{meeting.summary}</p>

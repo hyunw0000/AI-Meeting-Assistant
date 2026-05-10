@@ -25,6 +25,9 @@ export default function CalendarPage() {
   const navigate = useNavigate()
   const { meetings, addMeeting } = useMeetings()
 
+  const [showLoginModal, setShowLoginModal] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [miniDate, setMiniDate] = useState(new Date())
   const [selectedSideDate, setSelectedSideDate] = useState<Date | null>(null)
@@ -117,16 +120,81 @@ export default function CalendarPage() {
     return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
   }
 
-  return (
-    <div className="dashboard" onClick={() => setCreatePopup(null)}>
+  const handleGoogleLogin = () => {
+    setIsLoggedIn(true)
+    setShowLoginModal(false)
+    // 백엔드 연결 후 이걸로 교체:
+    // try {
+    //   const res = await fetch('http://localhost:8000/api/v1/calendar/auth')
+    //   const data = await res.json()
+    //   if (data.auth_url) window.location.href = data.auth_url
+    // } catch (e) {
+    //   console.error(e)
+    // }
+  }
 
-      {/* 상단 헤더 */}
+  const handleLogout = () => {
+    setIsLoggedIn(false)
+    setShowLoginModal(true)
+    setShowProfileMenu(false)
+  }
+
+  return (
+    <div className="dashboard" onClick={() => { setCreatePopup(null); setShowProfileMenu(false) }}>
+
+      {/* 로그인 모달 */}
+      {showLoginModal && (
+        <div className="modal-overlay">
+          <div className="login-modal" onClick={e => e.stopPropagation()}>
+            <div className="login-modal-logo">
+              <CalendarIcon size={48} color="#aa3bff" />
+              <h1 className="login-modal-title">MeetLog</h1>
+              <p className="login-modal-desc" style={{ marginTop: 12 }}>AI 회의 기록 서비스, 지금 시작해보세요!</p>            </div>
+            <button className="google-login-btn" onClick={handleGoogleLogin}>
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                width={20}
+                height={20}
+                alt="google"
+              />
+              Google로 로그인
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 인라인 헤더 */}
       <div className="inline-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 1, marginLeft: 50 }}>
           <CalendarIcon size={22} color="#aa3bff" />
           <span className="logo-text">MeetLog</span>
         </div>
+        {isLoggedIn && (
+          <div className="profile-wrapper" style={{ marginRight: 20 }}>
+            <div
+              className="profile-avatar"
+              style={{ cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); setShowProfileMenu(prev => !prev) }}
+            >
+              은
+            </div>
+            {showProfileMenu && (
+              <div className="profile-dropdown" onClick={e => e.stopPropagation()}>
+                <div className="profile-dropdown-info">
+                  <span className="profile-dropdown-name">은주</span>
+                  <span className="profile-dropdown-email">ieunjuee@gmail.com</span>
+                </div>
+                <hr className="profile-dropdown-divider" />
+                <button
+                  className="profile-dropdown-logout"
+                  onClick={handleLogout}
+                >
+                  로그아웃
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 메인 레이아웃 */}
@@ -137,21 +205,22 @@ export default function CalendarPage() {
 
           {/* 미니 캘린더 */}
           <div className="sidebar-card">
-          <Calendar
-            value={miniDate}
-            onChange={val => {
-              setMiniDate(val as Date)
-              setSelectedSideDate(val as Date)
-            }}
-            tileContent={miniTileContent}
-            formatDay={(_locale, date) => String(date.getDate())}
-            prevLabel="‹"
-            nextLabel="›"
-            prev2Label={null}
-            next2Label={null}
-            calendarType="gregory"
-            className="mini-calendar"
-          />
+            <Calendar
+              value={miniDate}
+              onChange={val => {
+                setMiniDate(val as Date)
+                setSelectedSideDate(val as Date)
+              }}
+              tileContent={miniTileContent}
+              formatDay={(_locale, date) => String(date.getDate())}
+              prevLabel="‹"
+              nextLabel="›"
+              prev2Label={null}
+              next2Label={null}
+              calendarType="gregory"
+              minDetail="month"
+              className="mini-calendar"
+            />
           </div>
 
           {/* 선택한 날짜 회의 */}
@@ -221,19 +290,19 @@ export default function CalendarPage() {
               <h2>회의 일정 캘린더</h2>
             </div>
             <Calendar
-            value={selectedDate}
-            onClickDay={(date, e) => handleTileClick(date, e as unknown as React.MouseEvent)}
-            tileContent={tileContent}
-            formatDay={(_locale, date) => String(date.getDate())}
-            prevLabel="‹"
-            nextLabel="›"
-            prev2Label={null}
-            next2Label={null}
-            minDetail="month"
-            calendarType="gregory"
-            formatShortWeekday={(_locale, date) => ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}
-            className="custom-calendar-large"
-          />
+              value={selectedDate}
+              onClickDay={(date, e) => handleTileClick(date, e as unknown as React.MouseEvent)}
+              tileContent={tileContent}
+              formatDay={(_locale, date) => String(date.getDate())}
+              prevLabel="‹"
+              nextLabel="›"
+              prev2Label={null}
+              next2Label={null}
+              minDetail="month"
+              calendarType="gregory"
+              formatShortWeekday={(_locale, date) => ['일', '월', '화', '수', '목', '금', '토'][date.getDay()]}
+              className="custom-calendar-large"
+            />
           </div>
         </section>
 
