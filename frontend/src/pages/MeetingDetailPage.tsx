@@ -65,21 +65,42 @@ export default function MeetingDetailPage() {
     setUploadedFile(file)
   }
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!uploadedFile && !audioURL) return
     setIsAnalyzing(true)
     setLoadingMessage('파일 업로드 중...')
-    setTimeout(() => {
-      setLoadingMessage('STT 변환 중...')
-      setTimeout(() => {
-        setLoadingMessage('AI 요약 생성 중...')
-        setTimeout(() => {
-          setIsAnalyzing(false)
-          setAnalyzed(true)
-          setActiveTab('summary')
-        }, 1000)
-      }, 1000)
-    }, 1000)
+
+    try {
+      const formData = new FormData()
+      if (uploadedFile) {
+        formData.append('file', uploadedFile)
+      } else if (audioURL) {
+        // Blob 데이터를 파일로 변환하여 전송하는 로직 필요
+        const response = await fetch(audioURL)
+        const blob = await response.blob()
+        formData.append('file', blob, 'recording.webm')
+      }
+      
+      const host = window.location.hostname || 'localhost'
+      const response = await fetch(`http://${host}:8000/api/v1/meetings/audio`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('업로드 실패')
+
+      const result = await response.json()
+      console.log("분석 결과:", result)
+      
+      setLoadingMessage('분석 완료!')
+      setAnalyzed(true)
+      setIsAnalyzing(false)
+      setActiveTab('summary')
+    } catch (err) {
+      console.error(err)
+      alert('분석 중 오류가 발생했습니다.')
+      setIsAnalyzing(false)
+    }
   }
 
   const handleDelete = () => {

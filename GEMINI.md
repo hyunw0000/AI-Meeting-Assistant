@@ -10,7 +10,7 @@
   2. **RAG (Vector Store):** 텍스트 데이터를 벡터화하여 저장 및 회의 문맥 검색 (FAISS/ChromaDB).
   3. **LLM (Summary/Analysis):** **llama.cpp + Qwen (GGUF)**를 활용하여 요약 및 액션 아이템 추출.
   4. **Automation:** **Google Calendar API**를 활용한 일정 자동 등록.
-- **Database:** **NCP Cloud DB for MySQL**을 사용하여 회의록, 요약 결과, 일정 정보 관리.
+- **Database:** **NCP Cloud DB for PostgreSQL**을 사용하여 회의록, 요약 결과, 일정 정보 관리.
 
 ## 🔄 Dual-Mode Data Flow
 
@@ -38,6 +38,6 @@
 - NCP CLOVA Speech API (Streaming/Async) 가이드
 - Google Calendar API / OAuth 2.0 가이드
 - llama.cpp & Qwen Documentation
-- NCP Cloud DB for MySQL 가이드
+- NCP Cloud DB for PostgreSQL 가이드
 
 항상 한국어로 말해줘

@@ -21,13 +21,21 @@ interface CreatePopup {
   y: number
 }
 
+interface UserInfo {
+  name: string;
+  email: string;
+  picture?: string;
+}
+
 export default function CalendarPage() {
   const navigate = useNavigate()
-  const { meetings, addMeeting } = useMeetings()
+  const { meetings, addMeeting, setMeetings } = useMeetings()
 
   const [showLoginModal, setShowLoginModal] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<UserInfo | null>(null)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [miniDate, setMiniDate] = useState(new Date())
   const [selectedSideDate, setSelectedSideDate] = useState<Date | null>(null)
@@ -36,21 +44,62 @@ export default function CalendarPage() {
   const [newColor, setNewColor] = useState('#039be5')
   const [listModalDate, setListModalDate] = useState<Date | null>(null)
 
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const res = await fetch(`http://${window.location.hostname}:8000/api/v1/calendar/status`)
-        const data = await res.json()
+        const host = window.location.hostname || 'localhost';
+        const res = await fetch(`http://${host}:8000/api/v1/calendar/status`);
+        if (!res.ok) throw new Error('API not found');
+        const data = await res.json();
+        
         if (data.is_logged_in) {
-          setIsLoggedIn(true)
-          setShowLoginModal(false)
+          setIsLoggedIn(true);
+          setUser(data.user);
+          setShowLoginModal(false);
+          if (!isDataLoaded) {
+            fetchGoogleEvents();
+            setIsDataLoaded(true);
+          }
+        } else {
+          setIsLoggedIn(false);
+          setUser(null);
+          setShowLoginModal(true);
         }
       } catch (e) {
-        console.error('인증 상태 확인 실패:', e)
+        console.error("인증 상태 확인 실패:", e);
       }
+    };
+    checkLoginStatus();
+  }, [isDataLoaded]);
+
+  const fetchGoogleEvents = async () => {
+    try {
+      const host = window.location.hostname || 'localhost';
+      const res = await fetch(`http://${host}:8000/api/v1/calendar/events`);
+      const data = await res.json();
+      
+      if (data.events) {
+        const googleMeetings = data.events.map((evt: any) => ({
+          id: `google_${evt.id}`,
+          title: evt.summary || '제목 없음',
+          date: new Date(evt.start.dateTime || evt.start.date),
+          summary: evt.description || '',
+          actionItems: [],
+          transcript: '',
+          color: '#33b679',
+        }));
+        
+        setMeetings((prevMeetings) => {
+          const nonGoogleMeetings = prevMeetings.filter(m => !m.id.startsWith('google_'));
+          return [...nonGoogleMeetings, ...googleMeetings];
+        });
+      }
+    } catch (e) {
+      console.error("구글 캘린더 이벤트 불러오기 실패:", e);
     }
-    checkLoginStatus()
-  }, [])
+  };
 
   const meetingsOnDate = (date: Date) =>
     meetings.filter(m => m.date.toDateString() === date.toDateString())
@@ -136,39 +185,14 @@ export default function CalendarPage() {
     return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
   }
 
-  // 페이지 로드 시 구글 인증 상태 확인
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const host = window.location.hostname || '101.79.22.220';
-        // 정확한 경로: /api/v1 + /calendar/status
-        const res = await fetch(`http://${host}:8000/api/v1/calendar/status`);
-        if (!res.ok) throw new Error('API not found');
-        const data = await res.json();
-        if (data.is_logged_in) {
-          setIsLoggedIn(true);
-          setShowLoginModal(false);
-        }
-      } catch (e) {
-        console.error("인증 상태 확인 실패 (엔드포인트 경로 확인 요망):", e);
-      }
-    };
-    checkLoginStatus();
-  }, []);
-
   const handleGoogleLogin = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      // 1. 백엔드에게 "구글 로그인 주소 알려줘"라고 요청 (fetch)
-      const host = window.location.hostname || '101.79.22.220';
+      const host = window.location.hostname || 'localhost';
       const res = await fetch(`http://${host}:8000/api/v1/calendar/auth`);
       const data = await res.json();
-      
-      // 2. 받은 데이터 안에 auth_url 주소가 있으면 실제로 출발!
       if (data.auth_url) {
         window.location.href = data.auth_url;
-      } else {
-        console.error("인증 URL을 받지 못했습니다.");
       }
     } catch (err) {
       console.error("구글 로그인 시도 중 오류 발생:", err);
@@ -177,8 +201,10 @@ export default function CalendarPage() {
 
   const handleLogout = () => {
     setIsLoggedIn(false)
+    setUser(null)
     setShowLoginModal(true)
     setShowProfileMenu(false)
+    // 서버측 토큰도 삭제하고 싶다면 여기에 추가 API 호출 필요
   }
 
   return (
@@ -190,7 +216,8 @@ export default function CalendarPage() {
             <div className="login-modal-logo">
               <CalendarIcon size={48} color="#aa3bff" />
               <h1 className="login-modal-title">MeetLog</h1>
-              <p className="login-modal-desc" style={{ marginTop: 12 }}>AI 회의 기록 서비스, 지금 시작해보세요!</p>            </div>
+              <p className="login-modal-desc" style={{ marginTop: 12 }}>AI 회의 기록 서비스, 지금 시작해보세요!</p>
+            </div>
             <button 
               className="google-login-btn" 
               onClick={handleGoogleLogin}
@@ -213,20 +240,24 @@ export default function CalendarPage() {
           <CalendarIcon size={22} color="#aa3bff" />
           <span className="logo-text">MeetLog</span>
         </div>
-        {isLoggedIn && (
+        {isLoggedIn && user && (
           <div className="profile-wrapper" style={{ marginRight: 20 }}>
             <div
               className="profile-avatar"
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', overflow: 'hidden' }}
               onClick={e => { e.stopPropagation(); setShowProfileMenu(prev => !prev) }}
             >
-              은
+              {user.picture ? (
+                <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                user.name.charAt(0)
+              )}
             </div>
             {showProfileMenu && (
               <div className="profile-dropdown" onClick={e => e.stopPropagation()}>
                 <div className="profile-dropdown-info">
-                  <span className="profile-dropdown-name">은주</span>
-                  <span className="profile-dropdown-email">ieunjuee@gmail.com</span>
+                  <span className="profile-dropdown-name">{user.name}</span>
+                  <span className="profile-dropdown-email">{user.email}</span>
                 </div>
                 <hr className="profile-dropdown-divider" />
                 <button className="profile-dropdown-logout" onClick={handleLogout}>

@@ -22,3 +22,7 @@ Thumbs.db
 ObjectStorage_temp/
 logs/
 *.log
+
+.env
+
+token.json
