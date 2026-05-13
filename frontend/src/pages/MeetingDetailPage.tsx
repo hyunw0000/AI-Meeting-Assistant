@@ -9,7 +9,7 @@ type Tab = 'record' | 'memo' | 'summary' | 'script'
 export default function MeetingDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { meetings, deleteMeeting } = useMeetings()
+  const { meetings, deleteMeeting, updateMeeting } = useMeetings()
 
   const meeting = meetings.find(m => m.id === id)
 
@@ -24,7 +24,18 @@ export default function MeetingDetailPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('파일 업로드 중...')
   const [analyzed, setAnalyzed] = useState(false)
-  const [memo, setMemo] = useState('')
+
+  const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const parseLocalDate = (dateString: string) => {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
@@ -80,6 +91,8 @@ export default function MeetingDetailPage() {
         const blob = await response.blob()
         formData.append('file', blob, 'recording.webm')
       }
+      formData.append('source', uploadedFile ? 'upload' : 'record')
+      formData.append('meeting_date', formatLocalDate(meeting!.date))
       
       const host = window.location.hostname || 'localhost'
       const response = await fetch(`http://${host}:8000/api/v1/meetings/audio`, {
@@ -92,6 +105,24 @@ export default function MeetingDetailPage() {
       const result = await response.json()
       console.log("분석 결과:", result)
       
+     const savedMeeting = result.meeting
+      const meetingResult = savedMeeting.meeting_result
+
+      updateMeeting(meeting!.id, {
+        title: meetingResult?.title || meeting!.title,
+        date: parseLocalDate(savedMeeting.meeting_date),
+        summary: meetingResult?.summary || '',
+        actionItems: (meetingResult?.tasks || [])
+          .map((task: any) => {
+            if (typeof task === 'string') return task
+            return task.content || ''
+          })
+          .filter(Boolean),
+        transcript: savedMeeting.transcript || '',
+        fileUrl: savedMeeting.file_path || '',
+      })
+
+      setUploadedFile(null)
       setLoadingMessage('분석 완료!')
       setAnalyzed(true)
       setIsAnalyzing(false)
@@ -103,12 +134,28 @@ export default function MeetingDetailPage() {
     }
   }
 
-  const handleDelete = () => {
-    if (confirm('이 회의를 삭제할까요?')) {
-      deleteMeeting(meeting!.id)
-      navigate('/')
+  const handleDelete = async () => {
+  if (!meeting) return
+
+  const ok = window.confirm('이 회의를 삭제하시겠습니까?')
+  if (!ok) return
+
+  try {
+    const host = window.location.hostname || 'localhost'
+
+    if (!isNaN(Number(meeting.id))) {
+      await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}`, {
+        method: 'DELETE',
+      })
     }
+
+    deleteMeeting(meeting.id)
+    navigate('/')
+  } catch (err) {
+    console.error('회의 삭제 실패:', err)
+    alert('회의 삭제 중 오류가 발생했습니다.')
   }
+}
 
   if (!meeting) {
     return (
@@ -157,6 +204,7 @@ export default function MeetingDetailPage() {
             <Calendar size={14} />
             {meeting.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
+          
         </div>
         <button className="delete-btn" onClick={handleDelete}>
           <Trash2 size={18} />
@@ -269,34 +317,53 @@ export default function MeetingDetailPage() {
             <textarea
               className="memo-textarea"
               placeholder="회의 중 자유롭게 메모하세요..."
-              value={memo}
-              onChange={e => setMemo(e.target.value)}
+              value={meeting.memo || ''}
+              onChange={async e => {
+                const newMemo = e.target.value
+
+                updateMeeting(meeting.id, { memo: newMemo })
+
+                if (!isNaN(Number(meeting.id))) {
+                  const host = window.location.hostname || 'localhost'
+
+                  await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}/memo`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      memo: newMemo,
+                    }),
+                  })
+                }
+              }}
               style={{ minHeight: 400 }}
             />
           </div>
         )}
 
         {/* 회의 요약 */}
-        {activeTab === 'summary' && (
-          <div className="card detail-page-card">
-            <div className="block-title">
-              <FileText size={18} />
-              <h3>회의 요약</h3>
-            </div>
-            {analyzed ? (
-              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
-                AI가 분석한 회의 요약 내용이 여기에 표시됩니다.
-              </p>
-            ) : meeting.summary ? (
-              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>{meeting.summary}</p>
-            ) : (
-              <div className="empty-state" style={{ padding: '60px 0' }}>
-                <FileText size={36} style={{ opacity: 0.2, marginBottom: 12 }} />
-                <p style={{ fontSize: 14 }}>녹음 탭에서 AI 분석을 실행하면<br />요약이 자동 생성됩니다.</p>
-              </div>
-            )}
-          </div>
-        )}
+{activeTab === 'summary' && (
+  <div className="card detail-page-card">
+    <div className="block-title">
+      <FileText size={18} />
+      <h3>회의 요약</h3>
+    </div>
+
+    {meeting.summary ? (
+      <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
+        {meeting.summary}
+      </p>
+    ) : (
+      <div className="empty-state" style={{ padding: '60px 0' }}>
+        <FileText size={36} style={{ opacity: 0.2, marginBottom: 12 }} />
+        <p style={{ fontSize: 14 }}>
+          녹음 탭에서 AI 분석을 실행하면<br />요약이 자동 생성됩니다.
+        </p>
+      </div>
+    )}
+  </div>
+)}
 
         {/* 전체 스크립트 */}
         {activeTab === 'script' && (

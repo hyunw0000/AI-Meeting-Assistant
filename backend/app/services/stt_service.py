@@ -49,8 +49,34 @@ def speech_to_text(file_path):
             result = response.json()
             print(f"DEBUG: API 응답 결과: {result}")
             
+            if "segments" in result and result["segments"]:
+                speaker_map = {}
+                speaker_count = 1
+                lines = []
+
+                for segment in result["segments"]:
+                    speaker_info = segment.get("speaker", {})
+                    speaker_label = speaker_info.get("label")
+
+                    if speaker_label is None:
+                        speaker_name = "화자"
+                    else:
+                        if speaker_label not in speaker_map:
+                            speaker_map[speaker_label] = f"화자{speaker_count}"
+                            speaker_count += 1
+
+                        speaker_name = speaker_map[speaker_label]
+
+                    text = segment.get("text", "").strip()
+
+                    if text:
+                        lines.append(f"{speaker_name}: {text}")
+
+                return "\n".join(lines)
+
             if "text" in result:
-                return result["text"]
+                return f"화자1: {result['text']}"
+
             return "STT 변환 실패"
     except Exception as e:
         print(f"DEBUG: STT 분석 중 오류 발생: {e}")
