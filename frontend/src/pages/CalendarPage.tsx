@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { useNavigate } from 'react-router-dom'
-import { Calendar as CalendarIcon, X, Clock, Upload, Loader2 } from 'lucide-react'
+import { Calendar as CalendarIcon, X, Clock } from 'lucide-react'
 import { useMeetings } from '../context/MeetingContext'
 import type { Meeting } from '../context/MeetingContext'
 import '../App.css'
@@ -27,13 +27,6 @@ interface UserInfo {
   picture?: string
 }
 
-const formatLocalDate = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 const parseLocalDate = (dateString: string) => {
   const [year, month, day] = dateString.split('-').map(Number)
   return new Date(year, month - 1, day)
@@ -54,9 +47,7 @@ export default function CalendarPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newColor, setNewColor] = useState('#039be5')
   const [listModalDate, setListModalDate] = useState<Date | null>(null)
-
   const [isDataLoaded, setIsDataLoaded] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -183,79 +174,6 @@ export default function CalendarPage() {
     } catch (err) {
       console.error('DB 캘린더 이벤트 불러오기 실패:', err)
     }
-  }
-
-  const uploadMeetingAudio = async (file: File) => {
-    try {
-      setIsUploading(true)
-
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('source', 'upload')
-      formData.append('meeting_date', formatLocalDate(selectedDate))
-
-      const host = window.location.hostname || 'localhost'
-      const res = await fetch(`http://${host}:8000/api/v1/meetings/audio`, {
-        method: 'POST',
-        body: formData,
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) throw new Error(data.detail || '업로드 실패')
-
-      const savedMeeting = data.meeting
-
-      // ✅ 해당 날짜에 미리 저장해둔 회의 찾기
-      const existingMeeting = meetings.find(
-        m => m.date.toDateString() === parseLocalDate(savedMeeting.meeting_date).toDateString()
-          && !m.id.startsWith('google_')
-          && !m.id.startsWith('task_')
-      )
-
-      const newMeeting: Meeting = {
-        id: String(savedMeeting.id),
-        title: existingMeeting?.title || savedMeeting.meeting_result?.title || '회의록', // ✅
-        date: parseLocalDate(savedMeeting.meeting_date),
-        summary: savedMeeting.meeting_result?.summary || '',
-        actionItems: (savedMeeting.meeting_result?.tasks || []).map((task: any) => {
-          if (typeof task === 'string') return task
-          return task.content || ''
-        }).filter(Boolean),
-        transcript: savedMeeting.transcript || '',
-        color: existingMeeting?.color || '#039be5', // ✅
-      }
-
-      const taskMeetings: Meeting[] = (savedMeeting.meeting_result?.tasks || [])
-        .filter((task: any) => task.due_date)
-        .map((task: any, index: number) => ({
-          id: `${savedMeeting.id}_task_${index}`,
-          title: task.content || '할 일',
-          date: parseLocalDate(task.due_date),
-          summary: `회의에서 추출된 할 일입니다.\n담당자: ${task.assignee || '미정'}`,
-          actionItems: [],
-          transcript: savedMeeting.transcript || '',
-          color: '#f4511e',
-          fileUrl: savedMeeting.file_path || '',
-        }))
-
-      setMeetings(prev => [...prev, newMeeting, ...taskMeetings])
-      setSelectedDate(newMeeting.date)
-
-      alert('회의록 생성 완료!')
-    } catch (err) {
-      console.error('업로드 실패:', err)
-      alert('업로드 실패. 백엔드, STT, Ollama 실행 상태를 확인해줘.')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    uploadMeetingAudio(file)
-    e.target.value = ''
   }
 
   const meetingsOnDate = (date: Date) =>
@@ -475,37 +393,6 @@ export default function CalendarPage() {
             />
           </div>
 
-          <div className="sidebar-card">
-            <div className="sidebar-section-title">
-              <Upload size={16} />
-              <span>녹음 파일 업로드</span>
-            </div>
-
-            <div className="upload-zone" onClick={e => e.stopPropagation()} style={{ padding: 24 }}>
-              {isUploading ? (
-                <>
-                  <Loader2 className="upload-icon" size={32} />
-                  <p>AI가 회의록을 생성하는 중...</p>
-                  <p className="hint">STT와 LLM 분석 때문에 시간이 걸릴 수 있습니다</p>
-                </>
-              ) : (
-                <>
-                  <Upload className="upload-icon" size={32} />
-                  <p>음성 파일을 선택하세요</p>
-                  <p className="hint">선택 날짜: {formatLocalDate(selectedDate ?? new Date())}</p>
-                  <p className="hint">MP3, WAV, M4A 지원</p>
-                </>
-              )}
-              <input
-                type="file"
-                className="file-input"
-                accept="audio/*"
-                onChange={handleFileUpload}
-                disabled={isUploading}
-              />
-            </div>
-          </div>
-
           {selectedDate && (
             <div className="sidebar-card">
               <div className="sidebar-section-title">
@@ -641,7 +528,6 @@ export default function CalendarPage() {
                 </h2>
               </div>
 
-              {/* ✅ 회의 추가 버튼 + X 버튼 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   className="save-btn"
