@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, FileText, MessageSquare, Upload, Calendar, Mic, Square, Play, PenLine, Trash2 } from 'lucide-react'
+import { ArrowLeft, FileText, MessageSquare, Upload, Calendar, Mic, Square, Play, PenLine, Trash2, Check } from 'lucide-react'
 import { useMeetings } from '../context/MeetingContext'
 import '../App.css'
 
@@ -23,19 +23,22 @@ export default function MeetingDetailPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('파일 업로드 중...')
-  const [analyzed, setAnalyzed] = useState(false)
+
+  // ✅ 제목 수정 상태
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
 
   const formatLocalDate = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
-const parseLocalDate = (dateString: string) => {
-  const [year, month, day] = dateString.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
+  const parseLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number)
+    return new Date(year, month - 1, day)
+  }
 
   const formatTime = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
@@ -86,14 +89,13 @@ const parseLocalDate = (dateString: string) => {
       if (uploadedFile) {
         formData.append('file', uploadedFile)
       } else if (audioURL) {
-        // Blob 데이터를 파일로 변환하여 전송하는 로직 필요
         const response = await fetch(audioURL)
         const blob = await response.blob()
         formData.append('file', blob, 'recording.webm')
       }
       formData.append('source', uploadedFile ? 'upload' : 'record')
       formData.append('meeting_date', formatLocalDate(meeting!.date))
-      
+
       const host = window.location.hostname || 'localhost'
       const response = await fetch(`http://${host}:8000/api/v1/meetings/audio`, {
         method: 'POST',
@@ -104,12 +106,13 @@ const parseLocalDate = (dateString: string) => {
 
       const result = await response.json()
       console.log("분석 결과:", result)
-      
-     const savedMeeting = result.meeting
+
+      const savedMeeting = result.meeting
       const meetingResult = savedMeeting.meeting_result
 
       updateMeeting(meeting!.id, {
-        title: meetingResult?.title || meeting!.title,
+        // ✅ 기존 제목 유지
+        title: meeting!.title,
         date: parseLocalDate(savedMeeting.meeting_date),
         summary: meetingResult?.summary || '',
         actionItems: (meetingResult?.tasks || [])
@@ -124,7 +127,6 @@ const parseLocalDate = (dateString: string) => {
 
       setUploadedFile(null)
       setLoadingMessage('분석 완료!')
-      setAnalyzed(true)
       setIsAnalyzing(false)
       setActiveTab('summary')
     } catch (err) {
@@ -135,27 +137,31 @@ const parseLocalDate = (dateString: string) => {
   }
 
   const handleDelete = async () => {
-  if (!meeting) return
+    if (!meeting) return
+    const ok = window.confirm('이 회의를 삭제하시겠습니까?')
+    if (!ok) return
 
-  const ok = window.confirm('이 회의를 삭제하시겠습니까?')
-  if (!ok) return
-
-  try {
-    const host = window.location.hostname || 'localhost'
-
-    if (!isNaN(Number(meeting.id))) {
-      await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}`, {
-        method: 'DELETE',
-      })
+    try {
+      const host = window.location.hostname || 'localhost'
+      if (!isNaN(Number(meeting.id))) {
+        await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}`, {
+          method: 'DELETE',
+        })
+      }
+      deleteMeeting(meeting.id)
+      navigate('/')
+    } catch (err) {
+      console.error('회의 삭제 실패:', err)
+      alert('회의 삭제 중 오류가 발생했습니다.')
     }
-
-    deleteMeeting(meeting.id)
-    navigate('/')
-  } catch (err) {
-    console.error('회의 삭제 실패:', err)
-    alert('회의 삭제 중 오류가 발생했습니다.')
   }
-}
+
+  // ✅ 제목 수정 저장
+  const handleTitleSave = () => {
+    if (!editTitle.trim()) return
+    updateMeeting(meeting!.id, { title: editTitle.trim() })
+    setIsEditingTitle(false)
+  }
 
   if (!meeting) {
     return (
@@ -180,7 +186,6 @@ const parseLocalDate = (dateString: string) => {
   return (
     <div className="dashboard" style={{ paddingTop: 40 }}>
 
-      {/* 로딩 오버레이 */}
       {isAnalyzing && (
         <div className="loading-overlay">
           <div className="loading-box">
@@ -190,7 +195,6 @@ const parseLocalDate = (dateString: string) => {
         </div>
       )}
 
-      {/* 제목 + 날짜 */}
       <div className="detail-top">
         <button className="back-btn" onClick={() => navigate('/')}>
           <ArrowLeft size={20} />
@@ -198,20 +202,55 @@ const parseLocalDate = (dateString: string) => {
         <div className="detail-title-area">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="color-badge" style={{ backgroundColor: meeting.color, width: 14, height: 14 }} />
-            <h1 className="detail-title">{meeting.title}</h1>
+            {/* ✅ 제목 클릭하면 수정 가능 */}
+            {isEditingTitle ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  autoFocus
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleTitleSave()
+                    if (e.key === 'Escape') setIsEditingTitle(false)
+                  }}
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    border: 'none',
+                    borderBottom: '2px solid #aa3bff',
+                    outline: 'none',
+                    padding: '2px 4px',
+                    width: 300,
+                  }}
+                />
+                <button className="icon-btn" onClick={handleTitleSave}>
+                  <Check size={18} color="#aa3bff" />
+                </button>
+              </div>
+            ) : (
+              <h1
+                className="detail-title"
+                onClick={() => {
+                  setEditTitle(meeting.title)
+                  setIsEditingTitle(true)
+                }}
+                style={{ cursor: 'pointer' }}
+                title="클릭하여 제목 수정"
+              >
+                {meeting.title}
+              </h1>
+            )}
           </div>
           <div className="detail-date">
             <Calendar size={14} />
             {meeting.date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
-          
         </div>
         <button className="delete-btn" onClick={handleDelete}>
           <Trash2 size={18} />
         </button>
       </div>
 
-      {/* 탭 */}
       <div className="detail-tabs">
         {tabs.map(tab => (
           <button
@@ -225,13 +264,10 @@ const parseLocalDate = (dateString: string) => {
         ))}
       </div>
 
-      {/* 탭 콘텐츠 */}
       <div className="detail-tab-content">
 
-        {/* 녹음 · 업로드 */}
         {activeTab === 'record' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-
             <div className="card detail-page-card">
               <div className="block-title">
                 <Mic size={18} />
@@ -303,11 +339,9 @@ const parseLocalDate = (dateString: string) => {
                 </button>
               )}
             </div>
-
           </div>
         )}
 
-        {/* 메모 */}
         {activeTab === 'memo' && (
           <div className="card detail-page-card">
             <div className="block-title">
@@ -320,20 +354,13 @@ const parseLocalDate = (dateString: string) => {
               value={meeting.memo || ''}
               onChange={async e => {
                 const newMemo = e.target.value
-
                 updateMeeting(meeting.id, { memo: newMemo })
-
                 if (!isNaN(Number(meeting.id))) {
                   const host = window.location.hostname || 'localhost'
-
                   await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}/memo`, {
                     method: 'PATCH',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      memo: newMemo,
-                    }),
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ memo: newMemo }),
                   })
                 }
               }}
@@ -342,30 +369,25 @@ const parseLocalDate = (dateString: string) => {
           </div>
         )}
 
-        {/* 회의 요약 */}
-{activeTab === 'summary' && (
-  <div className="card detail-page-card">
-    <div className="block-title">
-      <FileText size={18} />
-      <h3>회의 요약</h3>
-    </div>
+        {activeTab === 'summary' && (
+          <div className="card detail-page-card">
+            <div className="block-title">
+              <FileText size={18} />
+              <h3>회의 요약</h3>
+            </div>
+            {meeting.summary ? (
+              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
+                {meeting.summary}
+              </p>
+            ) : (
+              <div className="empty-state" style={{ padding: '60px 0' }}>
+                <FileText size={36} style={{ opacity: 0.2, marginBottom: 12 }} />
+                <p style={{ fontSize: 14 }}>녹음 탭에서 AI 분석을 실행하면<br />요약이 자동 생성됩니다.</p>
+              </div>
+            )}
+          </div>
+        )}
 
-    {meeting.summary ? (
-      <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
-        {meeting.summary}
-      </p>
-    ) : (
-      <div className="empty-state" style={{ padding: '60px 0' }}>
-        <FileText size={36} style={{ opacity: 0.2, marginBottom: 12 }} />
-        <p style={{ fontSize: 14 }}>
-          녹음 탭에서 AI 분석을 실행하면<br />요약이 자동 생성됩니다.
-        </p>
-      </div>
-    )}
-  </div>
-)}
-
-        {/* 전체 스크립트 */}
         {activeTab === 'script' && (
           <div className="card detail-page-card">
             <div className="block-title">

@@ -10,6 +10,7 @@ export interface Meeting {
   transcript: string
   color: string
   fileUrl?: string
+  memo?: string  // ✅ 추가
 }
 
 interface MeetingContextType {
