@@ -4,6 +4,7 @@ from app.services.google_calendar import google_calendar_service
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+from app.core.config import settings
 import os
 
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
@@ -55,10 +56,10 @@ async def google_callback(code: str):
         if not creds:
             raise Exception("토큰 획득 실패")
         # 로컬 테스트 시 localhost:5173으로, 서버 배포 시 해당 IP로 이동
-        return RedirectResponse(url="http://localhost:5173?login=success")
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=success")
     except Exception as e:
         print(f"로그인 콜백 에러: {e}")
-        return RedirectResponse(url="http://localhost:5173?login=error")
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}?login=error")
 
 @router.post("/create-event")
 async def create_event(event: EventCreate):
