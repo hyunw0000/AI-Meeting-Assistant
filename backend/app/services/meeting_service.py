@@ -3,7 +3,7 @@ import json
 import re
 import requests
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_URL = "http://10.0.30.6:8001/api/generate"
 MODEL_NAME = "qwen2.5:1.5b"
 
 
