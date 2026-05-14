@@ -24,7 +24,6 @@ export default function MeetingDetailPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('파일 업로드 중...')
 
-  // ✅ 제목 수정 상태
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editTitle, setEditTitle] = useState('')
 
@@ -111,8 +110,9 @@ export default function MeetingDetailPage() {
       const meetingResult = savedMeeting.meeting_result
 
       updateMeeting(meeting!.id, {
-        // ✅ 기존 제목 유지
-        title: meeting!.title,
+        id: String(savedMeeting.id),  // ✅
+        title: meeting!.title,         // ✅ 기존 제목 유지
+        color: meeting!.color,         // ✅ 기존 색상 유지
         date: parseLocalDate(savedMeeting.meeting_date),
         summary: meetingResult?.summary || '',
         actionItems: (meetingResult?.tasks || [])
@@ -156,7 +156,6 @@ export default function MeetingDetailPage() {
     }
   }
 
-  // ✅ 제목 수정 저장
   const handleTitleSave = () => {
     if (!editTitle.trim()) return
     updateMeeting(meeting!.id, { title: editTitle.trim() })
@@ -202,7 +201,6 @@ export default function MeetingDetailPage() {
         <div className="detail-title-area">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="color-badge" style={{ backgroundColor: meeting.color, width: 14, height: 14 }} />
-            {/* ✅ 제목 클릭하면 수정 가능 */}
             {isEditingTitle ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
