@@ -141,7 +141,7 @@ def delete_meeting(
     meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
 
     if meeting is None:
-    raise HTTPException(status_code=404, detail="회의를 찾을 수 없습니다")
+        raise HTTPException(status_code=404, detail="회의를 찾을 수 없습니다")
     
     db.delete(meeting)
     db.commit()
