@@ -3,7 +3,8 @@ import json
 import re
 import requests
 
-OLLAMA_URL = "http://10.0.30.6:8001/api/generate"
+# 1. URL - /api/generate → /generate
+OLLAMA_URL = "http://10.0.30.6:8001/generate"
 MODEL_NAME = "qwen2.5:1.5b"
 
 
@@ -66,9 +67,9 @@ def generate_meeting_result(transcript, meeting_date=None):
         response = requests.post(
             OLLAMA_URL,
             json={
-                "model": MODEL_NAME,
                 "prompt": prompt,
-                "stream": False
+                "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
+                "temperature": 0.7,
             },
             timeout=120
         )
