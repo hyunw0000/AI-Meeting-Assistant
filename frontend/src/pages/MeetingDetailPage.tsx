@@ -143,10 +143,14 @@ export default function MeetingDetailPage() {
 
     try {
       const host = window.location.hostname || 'localhost'
-      if (!isNaN(Number(meeting.id))) {
-        await fetch(`http://${host}:8000/api/v1/meetings/${meeting.id}`, {
+      // DB에 저장된 회의는 id가 숫자형이거나, fileUrl이 있으면 DB 삭제 API 호출
+      const dbId = Number(meeting.id)
+      const hasDbRecord = !isNaN(dbId) || !!meeting.fileUrl
+      if (hasDbRecord && !isNaN(dbId)) {
+        const res = await fetch(`http://${host}:8000/api/v1/meetings/${dbId}`, {
           method: 'DELETE',
         })
+        if (!res.ok) throw new Error('DB 삭제 실패')
       }
       deleteMeeting(meeting.id)
       navigate('/')
