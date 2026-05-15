@@ -39,8 +39,11 @@ def generate_meeting_result(transcript, meeting_date=None):
 
 규칙:
 - 설명 문장 없이 JSON만 반환해.
-- summary는 회의 전체 내용을 2~4문장으로 요약해.
-- 특정 할 일 하나만 요약하지 말고, 회의에서 논의된 전체 작업 흐름을 요약해.
+- summary는 반드시 4~6문장으로 자세히 작성해. 한두 문장 요약은 절대 금지.
+- summary에는 회의 안건, 각 참석자가 보고한 작업 내용, 발생한 이슈, 결정사항, 다음 회의 일정을 모두 포함해.
+- 각 참석자별로 어떤 작업을 하고 있고 언제까지 완료할 예정인지 구체적으로 언급해.
+- "회의를 진행했습니다", "논의했습니다" 같은 추상적 표현은 금지. 실제 작업 내용과 마감일을 구체적으로 써.
+- 단순 나열이 아닌, 회의 흐름이 자연스럽게 이어지도록 작성해.
 
 - 회의 텍스트에서 담당자, 해야 할 일, 마감일이 언급된 항목은 모두 tasks에 넣어.
 - 한 문장 안에 여러 개의 할 일이 있으면 각각 별도 task로 분리해.
@@ -74,7 +77,7 @@ def generate_meeting_result(transcript, meeting_date=None):
             OLLAMA_URL,
             json={
                 "prompt": prompt,
-                "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
+                "max_tokens": 1500,   # 기본값 256이라 회의록엔 너무 짧음
                 "temperature": 0.7,
             },
             timeout=300
