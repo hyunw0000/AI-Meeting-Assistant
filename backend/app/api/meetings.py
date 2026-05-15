@@ -23,6 +23,7 @@ async def upload_audio(
     file: UploadFile = File(...),
     source: str = Form("upload"),
     meeting_date: str = Form(None),
+    title: str = Form(None),
     db: Session = Depends(get_db),
 ):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -39,31 +40,31 @@ async def upload_audio(
     meeting_result = generate_meeting_result(stt_result, meeting_date)
 
     db_meeting = Meeting(
-        title=meeting_result.get("title", "회의록"),
+        title=title if title else meeting_result.get("title", "회의록"),
         date=datetime.strptime(meeting_date, "%Y-%m-%d"),
         summary=meeting_result.get("summary", ""),
-        action_items=meeting_result.get("tasks", []),
+        action_items=[],
         transcript=stt_result,
         file_url=file_path,
     )
     
     # 구글 캘린더 자동 등록
-   # tasks = meeting_result.get("tasks", [])
-  #  for task in tasks:
-  #      due_date = task.get("due_date")
-  #      if due_date:
-  #          try:
-  #              start_time = datetime.strptime(due_date, "%Y-%m-%d")
-  #              end_time = start_time + timedelta(hours=1)
-   #             description = f"담당자: {task.get('assignee', '미정')}"
-   #             google_calendar_service.create_event(
-    #                summary=task.get("content", "할 일"),
-    #                description=description,
-   #                 start_time=start_time,
-  #                  end_time=end_time
-  #              )
- #           except Exception as e:
-  #              print(f"구글 캘린더 등록 실패: {e}")
+    tasks = meeting_result.get("tasks", [])
+    for task in tasks:
+        due_date = task.get("due_date")
+        if due_date:
+            try:
+                start_time = datetime.strptime(due_date, "%Y-%m-%d")
+                end_time = start_time + timedelta(hours=1)
+                description = f"담당자: {task.get('assignee', '미정')}"
+                google_calendar_service.create_event(
+                    summary=task.get("content", "할 일"),
+                    description=description,
+                    start_time=start_time,
+                    end_time=end_time
+                )
+            except Exception as e:
+                print(f"구글 캘린더 등록 실패: {e}")
 
     db.add(db_meeting)
     db.commit()
