@@ -114,7 +114,7 @@ def parse_llm_json(content, transcript):
 
     # 2. 앞에 자연어가 붙는 경우 - 모든 { 위치 찾아서 마지막부터 시도
     matches = list(re.finditer(r"\{", content))
-    for m in reversed(matches):
+    for m in matches:
         candidate = content[m.start():]
         depth = 0
         end = -1
@@ -129,7 +129,9 @@ def parse_llm_json(content, transcript):
         if end == -1:
             continue
         try:
-            return json.loads(candidate[:end])
+            parsed = json.loads(candidate[:end])
+            if "title" in parsed and "summary" in parsed:
+                return parsed
         except json.JSONDecodeError:
             continue
 
