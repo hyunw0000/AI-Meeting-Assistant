@@ -85,7 +85,7 @@ def generate_meeting_result(transcript, meeting_date=None):
             json={
                 "prompt": prompt,
                 "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
-                "temperature": 0.5,
+                "temperature": 0.7,
             },
             timeout=300
         )
