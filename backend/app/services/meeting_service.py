@@ -327,10 +327,10 @@ def fix_due_dates(tasks, transcript, base_date):
 
         fixed_tasks.append(task)
 
-    fixed_tasks = supplement_tasks_from_transcript(
-        fixed_tasks,
-        transcript,
-        base_date
-    )
+    #fixed_tasks = supplement_tasks_from_transcript(
+    #    fixed_tasks,
+    #    transcript,
+    #    base_date
+    #)
 
     return fixed_tasks
