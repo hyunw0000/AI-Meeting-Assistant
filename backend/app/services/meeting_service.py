@@ -3,9 +3,15 @@ import json
 import re
 import requests
 
-# 1. URL - /api/generate → /generate
-OLLAMA_URL = "http://10.0.30.6:8001/generate"
-#MODEL_NAME = "qwen2.5:7b"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# 환경변수에서 선택된 서버의 URL을 가져옴
+server_mode = os.getenv("ACTIVE_OLLAMA_SERVER", "LOCAL")
+OLLAMA_URL = os.getenv("TEAM_OLLAMA_URL") if server_mode == "TEAM" else os.getenv("LOCAL_OLLAMA_URL")
+MODEL_NAME = "qwen2.5:7b"
 
 
 def generate_meeting_result(transcript, meeting_date=None):
@@ -18,65 +24,40 @@ def generate_meeting_result(transcript, meeting_date=None):
         else datetime.now().date()
     )
 
-    prompt = f"""너는 회의록 작성 AI야.
-아래 회의 텍스트를 분석해서 반드시 JSON만 반환해.
+    prompt = f"""너는 회의록 작성 AI야. 아래 규칙을 엄격히 지켜서 반드시 JSON만 반환해.
 
-반환 형식:
+[규칙]
+- 반드시 중괄호{{ 로 시작해.
+- JSON 외 다른 문장(서론, 설명) 절대 출력하지 마.
+- summary 필드는 줄글로 풀어쓰지 말고, "라벨: 내용" 형식으로 한 줄에 하나씩 작성해.
+- 회의 텍스트에 명시된 내용만 사용하고, 추측하지 마.
+- 오늘 날짜 기준은 {base_date.isoformat()}.
+- 나머지 JSON 구조는 아래 형식을 반드시 따라.
+
+[JSON 형식]
 {{
   "title": "회의 제목",
-  "summary": "summary 내용",
+  "summary": "주제: ... \n참여자: ... \n안건: ... \n주요 논의: ... \n다음 회의: ...",
   "decisions": ["결정사항1", "결정사항2"],
   "tasks": [
-    {{
-      "content": "할 일",
-      "assignee": "담당자 또는 미정",
-      "due_text": "원문에 나온 마감 표현",
-      "due_date": null
-    }}
+    {{"content": "할 일", "assignee": "담당자", "due_text": "원문 날짜", "due_date": null}}
   ]
 }}
 
-summary 필드는 반드시 아래 예시와 동일한 형식으로 작성해.
-한 줄에 하나씩, 라벨 뒤에 콜론을 붙이고 내용을 써. 줄글로 풀어쓰지 마.
-
-summary 예시:
-주제: 4월 마케팅 회의
-참여자: 홍길동, 김철수, 이영희
-안건: 캠페인 결과 공유, 다음 달 예산 논의
-주요 논의: 홍길동 - 인스타 광고 성과 분석, 김철수 - 신규 채널 제안
-다음 회의: 5월 3일 오후 2시
-
-규칙:
-- JSON 외 다른 문장 절대 출력하지 마.
-- 반드시 중괄호로 시작해.
-- summary 끝에 "예정입니다", "목표입니다" 같은 마무리 문장 절대 금지.
-- 회의 텍스트에 명시된 내용만 사용. 추측 금지.
-- 텍스트에 없는 항목(예: 다음 회의가 안 정해졌으면)은 해당 줄을 아예 생략해.
-- 회의 텍스트에서 담당자, 해야 할 일, 마감일이 언급된 항목은 모두 tasks에 넣어.
-- 한 문장 안에 여러 개의 할 일이 있으면 각각 별도 task로 분리해.
-- 단순 인사, 회의 시작 안내, 마무리 문장은 tasks에 넣지 마.
-- content는 원문 그대로 쓰지 말고 핵심 할 일만 짧게. 담당자 이름이나 마감일 표현 넣지 마.
-- assignee에는 회의 텍스트에서 언급된 담당자 이름만. 없으면 "미정".
-- 할 일이 없으면 tasks는 빈 배열 [].
-- due_text에는 원문에 나온 날짜 표현 그대로. 예: "내일까지", "이번 주 금요일까지", "5월 20일까지"
-- due_date는 네가 계산하지 말고 null로 둬.
-- 오늘 날짜 기준은 {base_date.isoformat()}.
-
-회의 텍스트:
+[회의 텍스트 시작]
 {transcript}
+[회의 텍스트 끝]
 """
 
     try:
         response = requests.post(
             OLLAMA_URL,
             json={
+                "model": "qwen2.5:3b",
                 "prompt": prompt,
-                "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
-                "temperature": 0.4,
-                "top_p": 0.9,
-                "repeat_penalty": 1.1,
+                "stream": False
             },
-            timeout=300
+            timeout=600
         )
 
         result = response.json()
@@ -104,40 +85,19 @@ summary 예시:
 
 
 def parse_llm_json(content, transcript):
-    # 마크다운 코드블록 제거
-    content = re.sub(r"```json\s*", "", content)
-    content = re.sub(r"```\s*", "", content)
-    content = content.strip()
-
-    # 1. 순수 JSON 파싱 시도
     try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        pass
-
-    # 2. 앞에 자연어가 붙는 경우 - 모든 { 위치 찾아서 마지막부터 시도
-    matches = list(re.finditer(r"\{", content))
-    for m in matches:
-        candidate = content[m.start():]
-        depth = 0
-        end = -1
-        for i, ch in enumerate(candidate):
-            if ch == "{":
-                depth += 1
-            elif ch == "}":
-                depth -= 1
-                if depth == 0:
-                    end = i + 1
-                    break
-        if end == -1:
-            continue
-        try:
-            parsed = json.loads(candidate[:end])
-            if "title" in parsed and "summary" in parsed:
-                return parsed
-        except json.JSONDecodeError:
-            continue
-
+        # JSON 문자열 내부의 줄바꿈 문자를 제거하여 파싱 에러 방지
+        content = content.replace('\n', ' ')
+        
+        # JSON처럼 보이는 가장 긴 { ... } 블록 추출
+        start = content.find('{')
+        end = content.rfind('}')
+        if start != -1 and end != -1:
+            json_str = content[start:end+1]
+            return json.loads(json_str)
+    except Exception as e:
+        print("JSON 파싱 에러:", e)
+        
     return fallback_result(transcript)
 
 
