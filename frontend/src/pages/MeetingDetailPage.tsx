@@ -94,7 +94,8 @@ export default function MeetingDetailPage() {
       }
       formData.append('source', uploadedFile ? 'upload' : 'record')
       formData.append('meeting_date', formatLocalDate(meeting!.date))
-
+      formData.append('title', meeting!.title)
+      
       const host = window.location.hostname || 'localhost'
       const response = await fetch(`http://${host}:8000/api/v1/meetings/audio`, {
         method: 'POST',
