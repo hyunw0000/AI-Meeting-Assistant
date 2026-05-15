@@ -72,7 +72,9 @@ summary 예시:
             json={
                 "prompt": prompt,
                 "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
-                "temperature": 0.7,
+                "temperature": 0.4,
+                "top_p": 0.9,
+                "repeat_penalty": 1.1,
             },
             timeout=300
         )
