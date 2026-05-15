@@ -84,8 +84,8 @@ def generate_meeting_result(transcript, meeting_date=None):
             OLLAMA_URL,
             json={
                 "prompt": prompt,
-                "max_tokens": 1500,   # 기본값 256이라 회의록엔 너무 짧음
-                "temperature": 0.3,
+                "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
+                "temperature": 0.5,
             },
             timeout=300
         )
