@@ -105,16 +105,35 @@ def parse_llm_json(content, transcript):
     content = re.sub(r"```json\s*", "", content)
     content = re.sub(r"```\s*", "", content)
     content = content.strip()
+
+    # 1. 순수 JSON 파싱 시도
     try:
         return json.loads(content)
     except json.JSONDecodeError:
         pass
 
-    try:
-        json_text = re.search(r"\{.*\}", content, re.DOTALL).group()
-        return json.loads(json_text)
-    except Exception:
-        return fallback_result(transcript)
+    # 2. 앞에 자연어가 붙는 경우 - 모든 { 위치 찾아서 마지막부터 시도
+    matches = list(re.finditer(r"\{", content))
+    for m in reversed(matches):
+        candidate = content[m.start():]
+        depth = 0
+        end = -1
+        for i, ch in enumerate(candidate):
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        if end == -1:
+            continue
+        try:
+            return json.loads(candidate[:end])
+        except json.JSONDecodeError:
+            continue
+
+    return fallback_result(transcript)
 
 
 def fallback_result(transcript):
