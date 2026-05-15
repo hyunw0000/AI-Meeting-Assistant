@@ -4,12 +4,13 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta #timedelta 추가
 
 from app.core.database import get_db
 from app.models.meeting import Meeting
 from app.services.stt_service import speech_to_text
 from app.services.meeting_service import generate_meeting_result
+from app.services.google_calendar import google_calendar_service
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
@@ -45,7 +46,26 @@ async def upload_audio(
         transcript=stt_result,
         file_url=file_path,
     )
+    
+    # 구글 캘린더 자동 등록
+    tasks = meeting_result.get("tasks", [])
+    for task in tasks:
+        due_date = task.get("due_date")
+        if due_date:
+            try:
+                start_time = datetime.strptime(due_date, "%Y-%m-%d")
+                end_time = start_time + timedelta(hours=1)
+                description = f"담당자: {task.get('assignee', '미정')}"
+                google_calendar_service.create_event(
+                    summary=task.get("content", "할 일"),
+                    description=description,
+                    start_time=start_time,
+                    end_time=end_time
+                )
+            except Exception as e:
+                print(f"구글 캘린더 등록 실패: {e}")
 
+    db.add(db_meeting)
     db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)
