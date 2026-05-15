@@ -97,6 +97,10 @@ def generate_meeting_result(transcript, meeting_date=None):
 
 
 def parse_llm_json(content, transcript):
+    # 마크다운 코드블록 제거
+    content = re.sub(r"```json\s*", "", content)
+    content = re.sub(r"```\s*", "", content)
+    content = content.strip()
     try:
         return json.loads(content)
     except json.JSONDecodeError:
