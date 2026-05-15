@@ -93,6 +93,10 @@ def generate_meeting_result(transcript, meeting_date=None):
         result = response.json()
         content = result.get("response", "")
 
+        print("=" * 50)
+        print("DEBUG LLM 응답:", content[:2000])
+        print("=" * 50)
+        
         parsed_result = parse_llm_json(content, transcript)
 
         fixed_tasks = fix_due_dates(
