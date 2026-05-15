@@ -379,13 +379,33 @@ export default function MeetingDetailPage() {
               <h3>회의 요약</h3>
             </div>
             {meeting.summary ? (
-              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
-                {meeting.summary}
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15, whiteSpace: 'pre-wrap' }}>
+                  {meeting.summary}
+                </p>
+                
+                {meeting.decisions && meeting.decisions.length > 0 && (
+                  <div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: 16, color: '#333' }}>결정 사항</h4>
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      {meeting.decisions.map((d: string, i: number) => <li key={i} style={{ color: '#555', marginBottom: 4 }}>{d}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {meeting.actionItems && meeting.actionItems.length > 0 && (
+                  <div>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: 16, color: '#333' }}>할 일 (Tasks)</h4>
+                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                      {meeting.actionItems.map((task: string, i: number) => <li key={i} style={{ color: '#555', marginBottom: 4 }}>{task}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="empty-state" style={{ padding: '60px 0' }}>
                 <FileText size={36} style={{ opacity: 0.2, marginBottom: 12 }} />
-                <p style={{ fontSize: 14 }}>녹음 탭에서 AI 분석을 실행하면<br />요약이 자동 생성됩니다.</p>
+                <p style={{ fontSize: 14 }}>AI 분석을 실행하면 요약이 자동 생성됩니다.</p>
               </div>
             )}
           </div>
