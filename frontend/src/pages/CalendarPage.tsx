@@ -32,6 +32,9 @@ const parseLocalDate = (dateString: string) => {
   return new Date(year, month - 1, day)
 }
 
+// 컴포넌트 외부에 선언 → 페이지 재마운트 시에도 초기화되지 않음
+let dataAlreadyLoaded = false
+
 export default function CalendarPage() {
   const navigate = useNavigate()
   const { meetings, addMeeting, setMeetings } = useMeetings()
@@ -47,7 +50,6 @@ export default function CalendarPage() {
   const [newTitle, setNewTitle] = useState('')
   const [newColor, setNewColor] = useState('#039be5')
   const [listModalDate, setListModalDate] = useState<Date | null>(null)
-  const [isDataLoaded, setIsDataLoaded] = useState(false)
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -63,10 +65,10 @@ export default function CalendarPage() {
           setUser(data.user)
           setShowLoginModal(false)
 
-          if (!isDataLoaded) {
+          if (!dataAlreadyLoaded) {
+            dataAlreadyLoaded = true
             await fetchGoogleEvents()
             await fetchDbCalendarEvents()
-            setIsDataLoaded(true)
           }
         } else {
           setIsLoggedIn(false)
@@ -82,7 +84,7 @@ export default function CalendarPage() {
     }
 
     checkLoginStatus()
-  }, [isDataLoaded])
+  }, [])
 
   const fetchGoogleEvents = async () => {
     try {
