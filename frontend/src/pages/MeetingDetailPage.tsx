@@ -110,9 +110,9 @@ export default function MeetingDetailPage() {
       const meetingResult = savedMeeting.meeting_result
 
       updateMeeting(meeting!.id, {
-        id: String(savedMeeting.id),  // ✅
-        title: meeting!.title,         // ✅ 기존 제목 유지
-        color: meeting!.color,         // ✅ 기존 색상 유지
+        // ❌ id는 바꾸지 않음 → id가 바뀌면 meeting을 못 찾아 "캘린더로 돌아가기" 화면으로 튕김
+        title: meeting!.title,
+        color: meeting!.color,
         date: parseLocalDate(savedMeeting.meeting_date),
         summary: meetingResult?.summary || '',
         actionItems: (meetingResult?.tasks || [])
