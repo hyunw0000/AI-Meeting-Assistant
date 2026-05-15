@@ -137,4 +137,35 @@ class GoogleCalendarService:
             print(f"An error occurred: {error}")
             return []
 
+#구글 캘린더 이벤트 생성 신규 추가 
+    def create_event(self, summary, description, start_time, end_time):
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                try:
+                    self.creds.refresh(Request())
+                except Exception:
+                    return None
+            else:
+                return None
+        try:
+            service = build("calendar", "v3", credentials=self.creds)
+            event = {
+                "summary": summary,
+                "description": description,
+                "start": {"dateTime": start_time.isoformat(), "timeZone": "Asia/Seoul"},
+                "end": {"dateTime": end_time.isoformat(), "timeZone": "Asia/Seoul"},
+                "reminders": {
+                    "useDefault": False,
+                    "overrides": [
+                        {"method": "email", "minutes": 1440},
+                        {"method": "popup", "minutes": 30},
+                    ]
+                }
+            }
+            result = service.events().insert(calendarId="primary", body=event).execute()
+            return result.get("htmlLink")
+        except HttpError as e:
+            print(f"캘린더 이벤트 생성 실패: {e}")
+            return None
+
 google_calendar_service = GoogleCalendarService()
