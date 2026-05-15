@@ -66,7 +66,6 @@ async def upload_audio(
                 print(f"구글 캘린더 등록 실패: {e}")
 
     db.add(db_meeting)
-    db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)
 
