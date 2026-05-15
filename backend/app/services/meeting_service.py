@@ -50,6 +50,10 @@ def generate_meeting_result(transcript, meeting_date=None):
 - content에는 담당자 이름, 마감일 표현, “해주세요”, “하기로 했습니다”를 넣지 마.
 - content는 회의 텍스트에서 실제로 언급된 할 일만 짧게 써.
 
+- 회의 텍스트에 없는 내용은 절대 만들지 마.
+- 텍스트가 짧거나 내용이 부족하면 summary에 "회의 내용이 충분하지 않습니다"라고 써.
+- tasks와 decisions도 텍스트에 명시된 것만 넣어.
+
 - assignee에는 회의 텍스트에서 언급된 담당자 이름만 넣어. 텍스트에 없는 이름은 절대 쓰지 마.
 - 담당자가 없으면 assignee는 "미정"으로 해.
 - 회의 텍스트에 없는 할 일은 절대 만들어내지 마.
