@@ -5,7 +5,7 @@ import requests
 
 # 1. URL - /api/generate → /generate
 OLLAMA_URL = "http://10.0.30.6:8001/generate"
-MODEL_NAME = "qwen2.5:1.5b"
+#MODEL_NAME = "qwen2.5:7b"
 
 
 def generate_meeting_result(transcript, meeting_date=None):
@@ -48,10 +48,12 @@ def generate_meeting_result(transcript, meeting_date=None):
 
 - content는 원문 문장 그대로 쓰지 말고, 핵심 할 일만 짧게 써.
 - content에는 담당자 이름, 마감일 표현, “해주세요”, “하기로 했습니다”를 넣지 마.
-- content 예시: "텍스트 업로드 기능 구현", "캘린더 일정 연동 버그 수정", "회의록 저장 기능 테스트"
+- content는 회의 텍스트에서 실제로 언급된 할 일만 짧게 써.
 
-- assignee에는 담당자 이름만 넣어. 예: "민수", "하연", "민규"
+- assignee에는 회의 텍스트에서 언급된 담당자 이름만 넣어. 텍스트에 없는 이름은 절대 쓰지 마.
 - 담당자가 없으면 assignee는 "미정"으로 해.
+- 회의 텍스트에 없는 할 일은 절대 만들어내지 마.
+- 할 일이 없으면 tasks는 빈 배열 []로 반환해.
 
 - due_text에는 원문에 나온 날짜 표현만 그대로 넣어.
 - due_text 예시: "내일까지", "이번 주 금요일까지", "5월 20일까지", "다음 주 월요일까지", "오늘 안으로"
@@ -71,7 +73,7 @@ def generate_meeting_result(transcript, meeting_date=None):
                 "max_tokens": 1000,   # 기본값 256이라 회의록엔 너무 짧음
                 "temperature": 0.7,
             },
-            timeout=120
+            timeout=300
         )
 
         result = response.json()
