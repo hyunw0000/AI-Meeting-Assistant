@@ -379,7 +379,7 @@ export default function MeetingDetailPage() {
               <h3>회의 요약</h3>
             </div>
             {meeting.summary ? (
-              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15 }}>
+              <p style={{ margin: 0, lineHeight: 1.8, color: '#555', fontSize: 15, whiteSpace: 'pre-wrap' }}>
                 {meeting.summary}
               </p>
             ) : (
