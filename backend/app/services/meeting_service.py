@@ -109,13 +109,68 @@ def parse_llm_json(content, transcript):
     content = re.sub(r"```\s*", "", content)
     content = content.strip()
 
-    # 1. 순수 JSON 파싱 시도
+    # ▼ 안전망 1: trailing comma 제거 (} 또는 ] 앞의 쉼표)
+    cleaned = re.sub(r",(\s*[}\]])", r"\1", content)
+
+    # ▼ 안전망 2: summary 내부 raw 줄바꿈을 \n escape 시퀀스로 변환
+    #    JSON 문자열 안에 raw \n이 있으면 파싱 실패하므로 escape
+    def fix_string_newlines(match):
+        key = match.group(1)
+        value = match.group(2)
+        # 문자열 내부의 raw newline/CR을 escape
+        value = value.replace("\n", "\\n").replace("\r", "")
+        return f'"{key}": "{value}"'
+    # summary, title, content, assignee, due_text 등 모든 문자열 값에 적용
+    cleaned = re.sub(
+        r'"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)"',
+        fix_string_newlines,
+        cleaned,
+        flags=re.DOTALL
+    )
+
+    # 1차 시도: 정제된 JSON 그대로 파싱
     try:
-        return json.loads(content)
+        return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    # 2. 앞에 자연어가 붙는 경우 - 모든 { 위치 찾아서 마지막부터 시도
+    # 2차 시도: 모든 { 위치에서 가장 안쪽까지 시도
+    matches = list(re.finditer(r"\{", cleaned))
+    for m in matches:
+        candidate = cleaned[m.start():]
+        depth = 0
+        end = -1
+        in_string = False
+        escape_next = False
+        for i, ch in enumerate(candidate):
+            if escape_next:
+                escape_next = False
+                continue
+            if ch == "\\":
+                escape_next = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        if end == -1:
+            continue
+        try:
+            parsed = json.loads(candidate[:end])
+            if "title" in parsed and "summary" in parsed:
+                return parsed
+        except json.JSONDecodeError:
+            continue
+
+    # 3차 시도: 원본 content에서도 같은 시도 (정제 과정에서 깨진 케이스 대비)
     matches = list(re.finditer(r"\{", content))
     for m in matches:
         candidate = content[m.start():]
@@ -138,8 +193,8 @@ def parse_llm_json(content, transcript):
         except json.JSONDecodeError:
             continue
 
+    print("⚠️ parse_llm_json 실패, fallback 반환")
     return fallback_result(transcript)
-
 
 def fallback_result(transcript):
     return {
