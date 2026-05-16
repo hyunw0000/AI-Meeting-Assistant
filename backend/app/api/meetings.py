@@ -1,16 +1,20 @@
-from fastapi import APIRouter, UploadFile, File, Form, Query, Depends
+import logging
+from fastapi import APIRouter, UploadFile, File, Form, Query, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 import os
 import shutil
-from datetime import datetime, timedelta #timedelta 추가
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.models.meeting import Meeting
 from app.services.stt_service import speech_to_text
 from app.services.meeting_service import generate_meeting_result
 from app.services.google_calendar import google_calendar_service
+from app.services.rag_service import index_meeting, delete_embedding
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
@@ -69,6 +73,13 @@ async def upload_audio(
     db.add(db_meeting)
     db.commit()
     db.refresh(db_meeting)
+
+    # RAG 임베딩: 백그라운드로 생성 (실패해도 응답에 영향 없음)
+    try:
+        index_meeting(db, db_meeting)
+        logger.info(f"RAG 임베딩 완료: meeting_id={db_meeting.id}")
+    except Exception as e:
+        logger.warning(f"RAG 임베딩 실패 (무시): {e}")
 
     return {
         "message": "audio saved and analyzed",
@@ -163,6 +174,12 @@ def delete_meeting(
     if meeting is None:
         raise HTTPException(status_code=404, detail="회의를 찾을 수 없습니다")
     
+    # RAG 임베딩 삭제 (CASCADE 없는 환경 대비)
+    try:
+        delete_embedding(db, meeting_id)
+    except Exception as e:
+        logger.warning(f"임베딩 삭제 실패 (무시): {e}")
+
     db.delete(meeting)
     db.commit()
 

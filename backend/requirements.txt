@@ -46,3 +46,8 @@ typing_extensions==4.15.0
 uritemplate==4.2.0
 urllib3==2.7.0
 uvicorn==0.46.0
+
+# RAG / Vector Search
+pgvector==0.3.6
+numpy>=1.24.0
+sentence-transformers>=2.7.0

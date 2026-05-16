@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.core.database import Base
 
@@ -14,3 +15,12 @@ class Meeting(Base):
     memo = Column(Text, nullable=True)
     file_url = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    # RAG 임베딩 (1:1)
+    embedding = relationship(
+        "MeetingEmbedding",
+        back_populates="meeting",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
