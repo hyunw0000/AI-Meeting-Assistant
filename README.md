@@ -33,3 +33,25 @@
 - **효율성:** 회의 후 수동으로 정리하던 시간을 획기적으로 단축.
 - **정확성:** AI가 일정을 직접 추출하므로 날짜 오기입 등 인적 오류 방지.
 - **최적화:** NCP SaaS를 적극 활용하여 낮은 서버 사양에서도 고성능 서비스 구현 가능.
+
+## 💻 세부 기술 스택
+
+| 분야 | 기술 |
+|---|---|
+| Backend | Python, FastAPI, SQLAlchemy |
+| Frontend | React 19, TypeScript, react-router-dom |
+| Database | MySQL (NCP Cloud DB), pgvector |
+| RAG/검색 | sentence-transformers |
+| 외부 연동 | Naver CLOVA Speech/Studio(HyperCLOVA X), Google/Naver Calendar API, AWS(boto3) |
+
+## 👨‍💻 팀원
+
+- [@jjh0813](https://github.com/jjh0813)
+- [@hyunw0000](https://github.com/hyunw0000)
+- [@ieunjuee](https://github.com/ieunjuee)
+- [@honghyokyung](https://github.com/honghyokyung)
+- [@eunjuuuuuuuuu](https://github.com/eunjuuuuuuuuu)
+
+## 📮 문의
+
+GitHub: [@hyunw0000](https://github.com/hyunw0000)
